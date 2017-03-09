@@ -1,0 +1,27 @@
+{
+  "name": "backEnd",
+  "version": "1.0.0",
+  "description": "backend for crickethealth",
+  "main": "server.js",
+  "scripts": {
+    "start": "NODE_ENV=development PORT=3003 nodemon -r babel-register ./src/server.js",
+    "deploy": "NODE_ENV=production PORT=3003 node -r babel-register ./src/server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "babel-preset-stage-0": "^6.22.0",
+    "babel-register": "^6.23.0",
+    "body-parser": "^1.17.1",
+    "connect-mongo": "^1.3.2",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.15.2",
+    "express-session": "^1.15.1",
+    "mongoose": "^4.8.6",
+    "passport": "^0.3.2",
+    "passport-auth0": "^0.6.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.23.1",
+    "babel-preset-es2015": "^6.22.0"
+  }
+}
