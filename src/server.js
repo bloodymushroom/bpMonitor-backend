@@ -3,7 +3,12 @@ import mongoose from 'mongoose'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
 
+// auth
 import session from 'express-session'
+import passport from 'passport'
+import Auth0Strategy from 'passport-auth0'
+import setup, {isAuthenticated} from './passportConfig.js'
+
 
 // connect db
 import connectMongo from 'connect-mongo'
@@ -24,7 +29,7 @@ const app = express()
 const port = process.env.PORT || 3000
 
 
-// start a session for the user
+// start a session for the user, saved in mongo
 app.use(session({
   store: new MongoStore({
     url: dbConfig.url
@@ -33,8 +38,11 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }))
-// app.use(passport.initialize())
-// app.use(passport.session())
+
+// PASSPORT SETUP
+setup(passport);
+app.use(passport.initialize())
+app.use(passport.session())
 
 // body parser
 app.use(bodyParser.json())
@@ -45,12 +53,15 @@ app.use(bodyParser.urlencoded({
 // allow CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
-  res.header('Access-Control-Allow-Headers', 'Content-Type')
   res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,HEAD,DELETE,OPTIONS,PUT'),
+  // res.header('Access-Control-Allow-Headers', 'Content-Type', 'Authorization')
+  res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Authorization, Access-Control-Request-Method, Access-Control-Request-Headers"),
 
   next()
 })
+
+// app.use(isAuthenticated);
 
 app.post('/register', (req, res) => {
   User.findOne({
@@ -76,10 +87,16 @@ app.post('/register', (req, res) => {
   })
 })
 
+app.get('/auth0', isAuthenticated, function (req, res) {
+    console.log('in passpart', req, res)
+  res.json({ status : 'auth0'});
+})
+
 app.post('/login', (req, res) => {
   User.findOne({
-    email: req.body.email,
-    password: req.body.password
+    // email: req.body.email,
+    // password: req.body.password
+    username: 'test',
   })
   .then( (user) => {
     console.log('user', user)
@@ -110,7 +127,7 @@ app.post('/login', (req, res) => {
   })
 })
 
-app.post('/BP', (req, res) => {
+app.post('/BP', passport.authenticate('auth0', {}), (req, res) => {
   User.findOne({
     username: req.body.username
   })
@@ -154,6 +171,16 @@ app.get('/BP', (req, res) => {
 })
 
 app.get('/', (req, res) => {
+  passport.authenticate('auth0', {}),
+  function(req, res) {
+    if (!req.user) {
+      throw new Error('user null');
+    }
+    res.status(400).json({
+      status: false,
+      message: err.message
+    })
+  }
   res.json({ data: 'hello world'})
 })
 
