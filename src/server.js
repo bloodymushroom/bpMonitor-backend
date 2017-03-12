@@ -53,18 +53,105 @@ app.use((req, res, next) => {
 })
 
 app.post('/register', (req, res) => {
-  console.log('register', req.body)
-  res.send({
-    user: 'user',
-    bp: [1, 2, 3, 4]
+  User.findOne({
+    username: req.body.username
+  })
+  .then( (user) => {
+    if (user) {
+      console.log('user exists')
+
+      res.status(400).json({
+        status: false
+      })
+    }
+
+    const newUser = new User({
+      username: req.body.username,
+      password: req.body.email,
+      email: req.body.email
+    })
+
+    newUser.save();
+    res.json(newUser)
   })
 })
 
 app.post('/login', (req, res) => {
-  console.log('login', req.body)
-  res.json('okay')
+  User.findOne({
+    email: req.body.email,
+    password: req.body.password
+  })
+  .then( (user) => {
+    console.log('user', user)
+    if (!user) {
+      console.log('no user found')
+      throw new Error('user does not exist')
+    }
+
+    console.log('success')
+
+    user.getPressures()
+    .then((bps) => {
+      res.json({
+        user,
+        bps
+      })
+    })
+
+    console.log('end of login')
+  })
+  .catch((err) => {
+    console.log(err.message)
+
+    res.status(400).json({
+      status: false,
+      message: err.message
+    })
+  })
 })
 
+app.post('/BP', (req, res) => {
+  User.findOne({
+    username: req.body.username
+  })
+  .then((user) => {
+    if (!user) {
+      throw new Error('no user to add BP to')
+    }
+    const newBP = new BloodPressure({
+      date: req.body.bp.date || new Date(),
+      systole: req.body.bp.systole,
+      diastole: req.body.bp.diastole
+    })
+
+    newBP.save();
+    console.log('new bp:', newBP)
+
+    user.addBP(newBP)
+    .then( (user) => {
+      console.log('add BP complete')
+      res.json(user)
+    })
+    .catch( (e) => {
+      console.log('error in adding')
+      res.send('error')
+    })
+  })
+  .catch((err) => {
+    console.log(err.message)
+
+    res.status(400).json({
+      status: false,
+      message: err.message
+    })
+  })
+})
+
+app.get('/BP', (req, res) => {
+  console.log('req.query', req.query)
+
+  res.send('got a query')
+})
 
 app.get('/', (req, res) => {
   res.json({ data: 'hello world'})

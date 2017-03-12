@@ -3,8 +3,9 @@ import mongoose, { Schema } from 'mongoose';
 import BloodPressure from './bloodPressure'
 
 const userSchema = new Schema({
-  name: String,
+  username: String,
   email: String,
+  password: String,
   bloodPressures: [{
     type: Schema.Types.ObjectId,
     ref: 'BloodPressure'
@@ -21,6 +22,18 @@ let getQuery = function(model, instances) {
 
 userSchema.methods.getPressures = function() {
   return getQuery(BloodPressure, this.bloodPressures);
+}
+
+userSchema.methods.addBP = function(bloodPressure) {
+  console.log('added bp')
+  if (typeof bloodPressure === 'BloodPressure') {
+    console.log('right type')
+  }
+  return this.update({
+    $addToSet: {
+      bloodPressures: bloodPressure
+    }
+  })
 }
 
 export { userSchema }
