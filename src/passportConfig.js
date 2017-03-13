@@ -36,12 +36,9 @@ export default function setup(passport) {
 
 export function isAuthenticated(req, res, next) {
   if (req.isAuthenticated()){
-
-    console.log('ok')
     return next();
   }
   else { 
-    console.log('not ok', req.headers)
     res.json('not ok')
   }
 }

@@ -55,12 +55,8 @@ var authenticate = jwt({
   secret: process.env.CLIENT_SECRET,
   audience: process.env.CLIENT_ID
 });
-
-console.log('jwt: ', process.env.CLIENT_SECRET, process.env.CLIENT_ID)
-
 // allow CORS
 app.use((req, res, next) => {
-  console.log('req headers', req.headers)
   res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:3002')
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,HEAD,DELETE,OPTIONS'),
   // res.header('Access-Control-Allow-Headers', 'Content-Type', 'Authorization')
@@ -76,72 +72,57 @@ app.use(authenticate)
 // app.use('/Auth0', authenticate)
 
 app.post('/register', (req, res) => {
-  console.log('in register')
   User.findOne({
     clientID: req.body.clientID
   })
   .then( (user) => {
     if (user) {
-      console.log('found user', user)
       user.getPressures()
       .then((bps) => {
-        console.log('bps',bps)
+        console.log('got', bps.length, 'BPs')
         res.json({
           user,
           bps
         })
       })
+    } else {
+      const newUser = new User({
+        username: req.body.username,
+        email: req.body.email,
+        clientID: req.body.clientID
+      })
+
+      newUser.save();
+      res.json({
+        user: newUser,
+        bps: []
+      })
     }
-
-    console.log('regiestered: ', req.body)
-    const newUser = new User({
-      username: req.body.username,
-      email: req.body.email,
-      clientID: req.body.clientID
-    })
-
-    newUser.save();
-    res.json({
-      user: newUser,
-      bps: []
-    })
   })
 })
 
 app.get('/auth0', function (req, res) {
-  console.log('req');
-   console.log('user', req.user)
   res.json({ status : 'auth0'});
 })
 
 app.post('/login', (req, res) => {
-  console.log('req', req.body.email)
   User.findOne({
     email: req.body.email,
   })
   .then( (user) => {
-    console.log('user', user)
     if (!user) {
-      console.log('no user found')
-      // res.redirect('/register');
       throw new Error('user does not exist')
     }
 
-    console.log('success')
-
     user.getPressures()
     .then((bps) => {
-      console.log('got bps', bps)
       res.json({
         user,
         bps
       })
     })
-
-    console.log('end of login')
   })
   .catch((err) => {
-    console.log(err.message)
 
     res.status(400).json({
       status: false,
@@ -166,21 +147,16 @@ app.post('/BP', (req, res) => {
     })
 
     newBP.save();
-    console.log('new bp:', newBP)
 
     user.addBP(newBP)
     .then( (user) => {
-      console.log('add BP complete')
       res.json(user)
     })
     .catch( (e) => {
-      console.log('error in adding')
       res.send('error')
     })
   })
   .catch((err) => {
-    console.log(err.message)
-
     res.status(400).json({
       status: false,
       message: err.message
@@ -189,7 +165,6 @@ app.post('/BP', (req, res) => {
 })
 
 app.get('/BP', (req, res) => {
-  console.log('req.query', req.query)
 
   res.send('got a query')
 })

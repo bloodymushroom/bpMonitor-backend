@@ -22,9 +22,9 @@ let getQuery = function(model, instances, sortParams) {
             console.log(instance);
             return mongoose.Types.ObjectId(instance)
           })
-        
       }
     }).sort(sortParams);
+    // console.log('got', result, 'pressures')
     return sortParams? result.sort(sortParams) : result;
   } else {
     return model.find(instances._id)
@@ -32,7 +32,7 @@ let getQuery = function(model, instances, sortParams) {
 }
 
 userSchema.methods.getPressures = function() {
-  console.log(this.bloodPressures)
+  // console.log('got', this.bloodPressures.length, 'pressures')
   return getQuery(BloodPressure, this.bloodPressures, { date: 1 })
   // .then( (data) => {
   //   return data.sortBy({ date: -1 })
