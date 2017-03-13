@@ -8,7 +8,7 @@ import session from 'express-session'
 import passport from 'passport'
 import Auth0Strategy from 'passport-auth0'
 import setup, {isAuthenticated} from './passportConfig.js'
-
+import jwt from 'express-jwt'
 
 // connect db
 import connectMongo from 'connect-mongo'
@@ -40,9 +40,9 @@ app.use(session({
 }))
 
 // PASSPORT SETUP
-setup(passport);
-app.use(passport.initialize())
-app.use(passport.session())
+// setup(passport);
+// app.use(passport.initialize())
+// app.use(passport.session())
 
 // body parser
 app.use(bodyParser.json())
@@ -50,58 +50,80 @@ app.use(bodyParser.urlencoded({
   extended: true
 }))
 
+// jwt
+var authenticate = jwt({
+  secret: process.env.CLIENT_SECRET,
+  audience: process.env.CLIENT_ID
+});
+
+console.log('jwt: ', process.env.CLIENT_SECRET, process.env.CLIENT_ID)
+
 // allow CORS
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Credentials', 'true')
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,HEAD,DELETE,OPTIONS,PUT'),
+  console.log('req headers', req.headers)
+  res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:3002')
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,HEAD,DELETE,OPTIONS'),
   // res.header('Access-Control-Allow-Headers', 'Content-Type', 'Authorization')
+  res.header('Access-Control-Allow-Credentials', 'true')
   res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Authorization, Access-Control-Request-Method, Access-Control-Request-Headers"),
 
   next()
 })
 
 // app.use(isAuthenticated);
+// app.use('/BP', jwt({ secret: process.env.CLIENT_SECRET}));
+app.use(authenticate)
+// app.use('/Auth0', authenticate)
 
 app.post('/register', (req, res) => {
+  console.log('in register')
   User.findOne({
-    username: req.body.username
+    clientID: req.body.clientID
   })
   .then( (user) => {
     if (user) {
-      console.log('user exists')
-
-      res.status(400).json({
-        status: false
+      console.log('found user', user)
+      user.getPressures()
+      .then((bps) => {
+        console.log('bps',bps)
+        res.json({
+          user,
+          bps
+        })
       })
     }
 
+    console.log('regiestered: ', req.body)
     const newUser = new User({
       username: req.body.username,
-      password: req.body.email,
-      email: req.body.email
+      email: req.body.email,
+      clientID: req.body.clientID
     })
 
     newUser.save();
-    res.json(newUser)
+    res.json({
+      user: newUser,
+      bps: []
+    })
   })
 })
 
-app.get('/auth0', isAuthenticated, function (req, res) {
-    console.log('in passpart', req, res)
+app.get('/auth0', function (req, res) {
+  console.log('req');
+   console.log('user', req.user)
   res.json({ status : 'auth0'});
 })
 
 app.post('/login', (req, res) => {
+  console.log('req', req.body.email)
   User.findOne({
-    // email: req.body.email,
-    // password: req.body.password
-    username: 'test',
+    email: req.body.email,
   })
   .then( (user) => {
     console.log('user', user)
     if (!user) {
       console.log('no user found')
+      // res.redirect('/register');
       throw new Error('user does not exist')
     }
 
@@ -109,6 +131,7 @@ app.post('/login', (req, res) => {
 
     user.getPressures()
     .then((bps) => {
+      console.log('got bps', bps)
       res.json({
         user,
         bps
@@ -127,9 +150,10 @@ app.post('/login', (req, res) => {
   })
 })
 
-app.post('/BP', passport.authenticate('auth0', {}), (req, res) => {
+app.post('/BP', (req, res) => {
   User.findOne({
-    username: req.body.username
+    email: req.body.email,
+    clientId: req.body.clientID
   })
   .then((user) => {
     if (!user) {
@@ -171,16 +195,6 @@ app.get('/BP', (req, res) => {
 })
 
 app.get('/', (req, res) => {
-  passport.authenticate('auth0', {}),
-  function(req, res) {
-    if (!req.user) {
-      throw new Error('user null');
-    }
-    res.status(400).json({
-      status: false,
-      message: err.message
-    })
-  }
   res.json({ data: 'hello world'})
 })
 

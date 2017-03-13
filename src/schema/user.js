@@ -6,7 +6,7 @@ import BloodPressure from './bloodPressure'
 const userSchema = new Schema({
   username: String,
   email: String,
-  password: String,
+  clientID: String,
   bloodPressures: [{
     type: Schema.Types.ObjectId,
     ref: 'BloodPressure'
@@ -15,16 +15,24 @@ const userSchema = new Schema({
 
 let getQuery = function(model, instances, sortParams) {
   if (Array.isArray(instances)) {
-    if (sortParams) {
-      return model.find(instances.map((instance) => instance._id)).sort(sortParams)
-    }
-      return model.find(instances.map((instance) => instance._id))
+    var result = model.find( {
+      '_id': {
+        $in: 
+          instances.map((instance) => {
+            console.log(instance);
+            return mongoose.Types.ObjectId(instance)
+          })
+        
+      }
+    }).sort(sortParams);
+    return sortParams? result.sort(sortParams) : result;
   } else {
     return model.find(instances._id)
   }
 }
 
 userSchema.methods.getPressures = function() {
+  console.log(this.bloodPressures)
   return getQuery(BloodPressure, this.bloodPressures, { date: 1 })
   // .then( (data) => {
   //   return data.sortBy({ date: -1 })
