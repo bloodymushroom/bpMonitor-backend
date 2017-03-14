@@ -5,9 +5,6 @@ import bodyParser from 'body-parser'
 
 // auth
 import session from 'express-session'
-import passport from 'passport'
-import Auth0Strategy from 'passport-auth0'
-import setup, {isAuthenticated} from './passportConfig.js'
 import jwt from 'express-jwt'
 import dotenv from 'dotenv'
 dotenv.config()
