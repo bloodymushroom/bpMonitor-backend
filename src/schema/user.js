@@ -19,7 +19,6 @@ let getQuery = function(model, instances, sortParams) {
       '_id': {
         $in: 
           instances.map((instance) => {
-            console.log(instance);
             return mongoose.Types.ObjectId(instance)
           })
       }
@@ -59,10 +58,25 @@ userSchema.methods.getPressures = function() {
 // }
 
 userSchema.methods.addBP = function(bloodPressure) {
-  console.log('added bp')
+  console.log('added bp', this.email)
   if (typeof bloodPressure === 'BloodPressure') {
     console.log('right type')
   }
+  // console.log('date', bloodPressure.date)
+
+  // return this.update({
+  //   bloodPressures: {
+  //     $elemMatch: {
+  //       date: new Date(bloodPressure.date)
+  //     }
+  //   }},
+  //   {
+  //     $set : {
+  //       'bloodPressures.$.systole': bloodPressure.systole,
+  //       'bloodPressures.$.diastole': bloodPressure.diastole,
+  //     }
+  //   }
+  // )
   return this.update({
     $addToSet: {
       bloodPressures: bloodPressure

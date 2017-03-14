@@ -9,7 +9,8 @@ import passport from 'passport'
 import Auth0Strategy from 'passport-auth0'
 import setup, {isAuthenticated} from './passportConfig.js'
 import jwt from 'express-jwt'
-
+import dotenv from 'dotenv'
+dotenv.config()
 // connect db
 import connectMongo from 'connect-mongo'
 const MongoStore = connectMongo(session);
@@ -73,7 +74,7 @@ app.use(authenticate)
 
 app.post('/register', (req, res) => {
   User.findOne({
-    clientID: req.body.clientID
+    email: req.body.email
   })
   .then( (user) => {
     if (user) {
@@ -140,8 +141,28 @@ app.post('/BP', (req, res) => {
     if (!user) {
       throw new Error('no user to add BP to')
     }
+
+    // console.log(new Date(req.body.bp.date))
+
+    // user.getPressures().update({
+    //   systole: 120
+    // }, {
+    //   systole: req.body.bp.systole,
+    //   diastole: req.body.bp.diastole
+    // }, {
+    //   upsert: true
+    // })
+    // .then( (data) => {
+    //   console.log('updated', data),
+    //   res.json(data)
+    // })
+    // .catch( (err) => {
+    //   console.log('error')
+    //   res.json(err)
+    // })
+
     const newBP = new BloodPressure({
-      date: req.body.bp.date || new Date(),
+      date: new Date(req.body.bp.date) || new Date(),
       systole: req.body.bp.systole,
       diastole: req.body.bp.diastole
     })
@@ -150,6 +171,7 @@ app.post('/BP', (req, res) => {
 
     user.addBP(newBP)
     .then( (user) => {
+      console.log('updated', user)
       res.json(user)
     })
     .catch( (e) => {
